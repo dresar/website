@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentasi: Algoritma Random Forest</title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Memuat FontAwesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Memuat Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Slide Container */
+        .slides-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            padding: 60px 80px;
+            overflow-y: auto;
+            background: white;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .slide-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Image Styling */
+        .slide img {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+            max-width: 100%;
+            max-height: 500px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .slide img:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Image container untuk grid */
+        .slide .grid img {
+            max-height: 400px;
+        }
+        
+        /* Image besar di center */
+        .slide .mx-auto {
+            max-height: 600px;
+        }
+
+        /* Control Buttons */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-control {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-control:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-nav {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            min-width: 120px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #666;
+        }
+
+        /* Slide Counter */
+        .slide-counter {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Scrollbar styling */
+        .slide::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .slide::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .slide::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .slide {
+                padding: 40px 30px;
+            }
+            
+            .controls {
+                top: 10px;
+                right: 10px;
+                flex-direction: column;
+            }
+            
+            .btn-control {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .nav-buttons {
+                bottom: 20px;
+                padding: 10px 15px;
+            }
+            
+            .btn-nav {
+                padding: 8px 12px;
+                font-size: 14px;
+                min-width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn-control" id="fullscreenBtn" title="Fullscreen">
+            <i class="fas fa-expand"></i>
+            <span>Fullscreen</span>
+        </button>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+        <button class="btn-nav" id="prevBtn">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <button class="btn-nav" id="nextBtn">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Slide Counter -->
+    <div class="slide-counter">
+        <span id="currentSlide">1</span> / <span id="totalSlides">10</span>
+    </div>
+
+    <!-- Slides Container -->
+    <div class="slides-container">
+        
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <div class="slide-content justify-center items-center text-center">
+                <h1 class="text-7xl md:text-8xl font-black mb-8 gradient-text">
+                    Random Forest
+                </h1>
+                <p class="text-4xl md:text-5xl text-gray-700 font-bold mb-4">
+                    Membedah Algoritma
+                </p>
+                <p class="text-2xl md:text-3xl text-gray-600 mt-6">
+                    Dari Konsep Fundamental ke Aplikasi Dunia Nyata
+                </p>
+                
+            </div>
+        </div>
+
+        <!-- Slide 2: Analogi & Konsep -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Analogi: Menebak Restoran Favorit
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8 items-center">
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-8 shadow-xl">
+                            <p class="text-xl leading-relaxed mb-6">
+                                Bayangkan Anda ingin tahu restoran mana yang akan disukai oleh seorang teman baru.
+                            </p>
+                            <div class="space-y-4">
+                                <div class="bg-white p-5 rounded-xl shadow-lg">
+                                    <h3 class="text-xl font-bold text-red-600 mb-2">Cara 1: Satu Decision Tree</h3>
+                                    <p class="text-lg">Bertanya kepada <strong>satu</strong> orang temannya. Risiko: jawaban bias atau <i>overfitting</i>.</p>
+                                </div>
+                                <div class="bg-white p-5 rounded-xl shadow-lg">
+                                    <h3 class="text-xl font-bold text-green-600 mb-2">Cara 2: Random Forest</h3>
+                                    <p class="text-lg">Bertanya kepada <strong>100 orang</strong> temannya dengan pertanyaan berbeda. Hasil: konsensus yang lebih akurat!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <img src="img/1.png" 
+                             alt="Decision Tree vs Random Forest" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 450px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Definisi & Komponen -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Apa itu Random Forest?
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8 items-center">
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-8 shadow-xl">
+                            <p class="text-2xl leading-relaxed mb-4">
+                                Random Forest adalah algoritma <strong class="text-blue-600">ensemble learning</strong> - sebuah <strong>"tim"</strong> model yang bekerja sama.
+                            </p>
+                            <p class="text-xl leading-relaxed">
+                                Tim ini terdiri dari banyak <strong>Pohon Keputusan (Decision Trees)</strong> yang bekerja bersama untuk prediksi yang lebih akurat dan stabil.
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-5 rounded-xl shadow-lg text-center">
+                                <i class="fas fa-sitemap text-4xl mb-3"></i>
+                                <h3 class="text-lg font-bold">Decision Tree</h3>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-500 to-cyan-500 text-white p-5 rounded-xl shadow-lg text-center">
+                                <i class="fas fa-layer-group text-4xl mb-3"></i>
+                                <h3 class="text-lg font-bold">Bagging</h3>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-500 to-emerald-500 text-white p-5 rounded-xl shadow-lg text-center">
+                                <i class="fas fa-random text-4xl mb-3"></i>
+                                <h3 class="text-lg font-bold">Random</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <img src="img/3.png" 
+                             alt="Random Forest Structure" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 450px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Decision Tree & Overfitting -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Decision Tree & Overfitting
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8">
+                    <div>
+                        <img src="img/4.png" 
+                             alt="Decision Tree Example" 
+                             class="rounded-xl shadow-2xl mb-6"
+                             style="max-width: 100%; max-height: 350px;">
+                        <div class="bg-gradient-to-br from-slate-50 to-gray-50 border-2 border-slate-300 rounded-2xl p-6 shadow-xl">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Decision Tree</h3>
+                            <ul class="list-disc list-inside space-y-2 text-lg">
+                                <li><strong>Node internal:</strong> Tes pada fitur</li>
+                                <li><strong>Cabang:</strong> Hasil dari tes</li>
+                                <li><strong>Daun:</strong> Label kelas atau nilai</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-300 rounded-2xl p-6 shadow-xl">
+                            <h3 class="text-3xl font-bold mb-4 text-red-800">Kelemahan</h3>
+                            <p class="text-xl">Satu pohon cenderung <strong class="text-red-600">overfitting</strong> - terlalu "hafal" data latihan dan gagal pada data baru.</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-300 rounded-2xl p-8 shadow-2xl">
+                            <h3 class="text-2xl font-bold mb-4 text-orange-800">Analogi Overfitting</h3>
+                            <p class="text-lg mb-4">Siswa yang <strong>menghafal mati</strong> 50 soal latihan dengan urutan jawaban (A, C, B, D...).</p>
+                            <div class="space-y-3">
+                                <div class="bg-green-100 p-4 rounded-lg">
+                                    <strong>Latihan:</strong> Nilai 100 (sempurna!)
+                                </div>
+                                <div class="bg-red-100 p-4 rounded-lg">
+                                    <strong>Ujian:</strong> Soal diacak → Gagal total
+                                </div>
+                            </div>
+                        </div>
+                        <img src="img/5.png" 
+                             alt="Overfitting Example" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 350px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Bagging & Randomness -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Bagging & Randomness Fitur
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8">
+                    <div>
+                        <img src="img/6.png" 
+                             alt="Bagging Process" 
+                             class="rounded-xl shadow-2xl mb-6"
+                             style="max-width: 100%; max-height: 400px;">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 rounded-xl shadow-lg text-center">
+                                <div class="text-4xl mb-3">1</div>
+                                <h4 class="text-lg font-bold">Bootstrap</h4>
+                                <p class="text-sm mt-2">Subset data acak dengan penggantian</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 rounded-xl shadow-lg text-center">
+                                <div class="text-4xl mb-3">2</div>
+                                <h4 class="text-lg font-bold">Aggregate</h4>
+                                <p class="text-sm mt-2">Latih Decision Tree independen</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-xl shadow-lg text-center">
+                                <div class="text-4xl mb-3">3</div>
+                                <h4 class="text-lg font-bold">Random</h4>
+                                <p class="text-sm mt-2">Subset fitur acak per node</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-6 shadow-xl">
+                            <h3 class="text-2xl font-bold mb-4">Proses Bagging</h3>
+                            <ol class="list-decimal list-inside space-y-3 text-lg">
+                                <li>Membuat banyak subset data secara acak <strong>dengan penggantian</strong> dari data training.</li>
+                                <li>Melatih Decision Tree independen pada setiap subset. Setiap pohon "tumbuh" berbeda.</li>
+                                <li>Di setiap node, pilih fitur terbaik hanya dari <strong>subset acak</strong> (bukan semua fitur).</li>
+                            </ol>
+                        </div>
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 shadow-xl">
+                            <p class="text-xl text-center">
+                                <strong>Tujuan:</strong> Membuat pohon-pohon lebih bervariasi (de-korelasi) dan mengurangi dominasi satu fitur kuat.
+                            </p>
+                        </div>
+                        <img src="img/7.png" 
+                             alt="Random Forest Algorithm Steps" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 400px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Proses Training & Prediksi -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Proses Training & Prediksi
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8">
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-2xl p-8 shadow-xl">
+                        <h3 class="text-3xl font-bold mb-6 text-indigo-800">Training</h3>
+                        <ol class="list-decimal list-inside space-y-4 text-lg">
+                            <li><strong>Pilih N:</strong> Tentukan jumlah pohon (n_estimators)</li>
+                            <li><strong>Bootstrap:</strong> Buat N sampel data acak dengan penggantian</li>
+                            <li><strong>Latih Pohon:</strong> Setiap sampel → satu Decision Tree</li>
+                            <li><strong>Siap:</strong> Hutan dengan N pohon siap prediksi</li>
+                        </ol>
+                        <img src="img/8.png" 
+                             alt="Random Forest Training" 
+                             class="rounded-xl shadow-lg mt-6"
+                             style="max-width: 100%; max-height: 350px;">
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-8 shadow-xl">
+                        <h3 class="text-3xl font-bold mb-6 text-green-800">Prediksi</h3>
+                        <div class="space-y-6 mb-6">
+                            <div class="bg-white p-6 rounded-xl shadow-lg">
+                                <h4 class="text-xl font-bold mb-3 text-blue-600">Klasifikasi</h4>
+                                <p class="text-lg">Setiap pohon "voting" → Kelas dengan suara terbanyak menang</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-lg">
+                                <h4 class="text-xl font-bold mb-3 text-green-600">Regresi</h4>
+                                <p class="text-lg">Setiap pohon prediksi nilai → Rata-rata semua prediksi</p>
+                            </div>
+                        </div>
+                        <img src="img/9.png" 
+                             alt="Random Forest Prediction" 
+                             class="rounded-xl shadow-lg"
+                             style="max-width: 100%; max-height: 350px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Contoh Voting -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Contoh: Mekanisme Voting
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8">
+                    <div class="bg-gradient-to-br from-gray-50 to-slate-50 border-2 border-gray-300 rounded-2xl p-10 shadow-2xl">
+                        <p class="text-2xl mb-6 text-center">
+                            Melatih <strong class="text-blue-600">100 pohon</strong> untuk menebak: "Apel" atau "Jeruk"?
+                        </p>
+                        <div class="grid grid-cols-2 gap-6 mb-6">
+                            <div class="bg-gradient-to-br from-red-100 to-pink-100 p-6 rounded-xl shadow-lg text-center">
+                                <i class="fas fa-apple-alt text-5xl text-red-500 mb-3"></i>
+                                <h3 class="text-3xl font-bold text-red-600 mb-2">Apel</h3>
+                                <p class="text-2xl font-black text-gray-800">82 suara</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-orange-100 to-yellow-100 p-6 rounded-xl shadow-lg text-center">
+                                <i class="fas fa-carrot text-5xl text-orange-500 mb-3"></i>
+                                <h3 class="text-3xl font-bold text-orange-600 mb-2">Jeruk</h3>
+                                <p class="text-2xl font-black text-gray-800">18 suara</p>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-6 rounded-xl text-center">
+                            <p class="text-3xl font-black">
+                                Prediksi Akhir: <span class="text-yellow-300">APEL</span> (Mayoritas)
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <img src="img/10.png" 
+                             alt="Voting Mechanism" 
+                             class="rounded-xl shadow-2xl mb-6"
+                             style="max-width: 100%; max-height: 350px;">
+                        <img src="img/11.png" 
+                             alt="Ensemble Prediction" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 350px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Kelebihan & Kekurangan -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Kelebihan & Kekurangan
+                </h2>
+                <div class="flex-1 grid grid-cols-3 gap-6">
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-8 shadow-xl">
+                        <h3 class="text-3xl font-bold mb-6 text-green-800 flex items-center gap-3">
+                            <i class="fas fa-check-circle"></i> Kelebihan
+                        </h3>
+                        <ul class="space-y-4 text-lg">
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-star text-green-500 text-xl mt-1"></i>
+                                <div><strong>Akurasi Tinggi</strong> - Performa bagus tanpa banyak tuning</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-shield-alt text-green-500 text-xl mt-1"></i>
+                                <div><strong>Tahan Overfitting</strong> - Robust dengan banyak pohon</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-cogs text-green-500 text-xl mt-1"></i>
+                                <div><strong>Fleksibel</strong> - Klasifikasi & Regresi</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-chart-line text-green-500 text-xl mt-1"></i>
+                                <div><strong>Feature Importance</strong> - Mengukur kontribusi fitur</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-300 rounded-2xl p-8 shadow-xl">
+                        <h3 class="text-3xl font-bold mb-6 text-red-800 flex items-center gap-3">
+                            <i class="fas fa-times-circle"></i> Kekurangan
+                        </h3>
+                        <ul class="space-y-4 text-lg">
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-cube text-red-500 text-xl mt-1"></i>
+                                <div><strong>Black Box</strong> - Sulit diinterpretasi</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-server text-red-500 text-xl mt-1"></i>
+                                <div><strong>Intensif Komputasi</strong> - Butuh waktu & memori lebih</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-hdd text-red-500 text-xl mt-1"></i>
+                                <div><strong>Ukuran Model</strong> - Memakan ruang disk besar</div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-exclamation-triangle text-red-500 text-xl mt-1"></i>
+                                <div><strong>Ekstrapolasi Buruk</strong> - Sulit prediksi di luar range data</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <img src="img/12.png" 
+                             alt="Performance Comparison" 
+                             class="rounded-xl shadow-2xl mb-6"
+                             style="max-width: 100%; max-height: 350px;">
+                        <img src="img/13.png" 
+                             alt="Feature Importance" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 350px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Hyperparameter & Aplikasi -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2 class="text-5xl font-bold text-gray-800 mb-8 gradient-text">
+                    Hyperparameter & Aplikasi
+                </h2>
+                <div class="flex-1 grid grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-2xl p-8 shadow-xl">
+                            <h3 class="text-3xl font-bold mb-6 text-purple-800">Hyperparameter Penting</h3>
+                            <div class="space-y-4">
+                                <div class="bg-white p-5 rounded-xl shadow-lg">
+                                    <strong class="text-xl text-purple-600">n_estimators</strong>
+                                    <p class="text-sm mt-2">Jumlah pohon (100-1000)</p>
+                                </div>
+                                <div class="bg-white p-5 rounded-xl shadow-lg">
+                                    <strong class="text-xl text-purple-600">max_features</strong>
+                                    <p class="text-sm mt-2">Jumlah fitur per split (√p)</p>
+                                </div>
+                                <div class="bg-white p-5 rounded-xl shadow-lg">
+                                    <strong class="text-xl text-purple-600">max_depth</strong>
+                                    <p class="text-sm mt-2">Kedalaman maksimum pohon</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-2xl p-8 shadow-xl">
+                            <h3 class="text-3xl font-bold mb-6 text-blue-800">Aplikasi Industri</h3>
+                            <div class="space-y-4">
+                                <div class="bg-white p-5 rounded-lg shadow-lg flex items-center gap-4">
+                                    <i class="fas fa-landmark text-3xl text-blue-600"></i>
+                                    <div>
+                                        <strong class="text-lg">Perbankan</strong>
+                                        <p class="text-sm text-gray-600">Deteksi fraud & risiko kredit</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-5 rounded-lg shadow-lg flex items-center gap-4">
+                                    <i class="fas fa-heart-pulse text-3xl text-red-600"></i>
+                                    <div>
+                                        <strong class="text-lg">Kesehatan</strong>
+                                        <p class="text-sm text-gray-600">Prediksi penyakit & diagnostik</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-5 rounded-lg shadow-lg flex items-center gap-4">
+                                    <i class="fas fa-shopping-cart text-3xl text-green-600"></i>
+                                    <div>
+                                        <strong class="text-lg">E-commerce</strong>
+                                        <p class="text-sm text-gray-600">Rekomendasi & prediksi churn</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <img src="img/14.png" 
+                             alt="Real World Applications" 
+                             class="rounded-xl shadow-2xl mb-6"
+                             style="max-width: 100%; max-height: 350px;">
+                        <img src="img/15.png" 
+                             alt="Hyperparameter Tuning" 
+                             class="rounded-xl shadow-2xl"
+                             style="max-width: 100%; max-height: 350px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Kesimpulan -->
+        <div class="slide">
+            <div class="slide-content justify-center items-center text-center">
+                <h2 class="text-6xl font-black mb-8 gradient-text">
+                    Kesimpulan
+                </h2>
+                <div class="max-w-5xl space-y-8">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-2xl p-10 shadow-2xl">
+                        <p class="text-3xl font-bold mb-6">
+                            Random Forest = "Pisau Swiss Army" Machine Learning
+                        </p>
+                        <p class="text-2xl leading-relaxed text-gray-700">
+                            Keseimbangan sempurna antara <strong class="text-blue-600">akurasi tinggi</strong> dan <strong class="text-purple-600">kemudahan penggunaan</strong>
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="bg-gradient-to-br from-blue-500 to-cyan-500 text-white p-8 rounded-xl shadow-2xl">
+                            <i class="fas fa-users text-6xl mb-4"></i>
+                            <p class="text-2xl font-bold">Ensemble</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-8 rounded-xl shadow-2xl">
+                            <i class="fas fa-vote-yea text-6xl mb-4"></i>
+                            <p class="text-2xl font-bold">Voting</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-emerald-500 text-white p-8 rounded-xl shadow-2xl">
+                            <i class="fas fa-trophy text-6xl mb-4"></i>
+                            <p class="text-2xl font-bold">Akurat</p>
+                        </div>
+                    </div>
+                    <img src="img/16.png" 
+                         alt="Random Forest Summary" 
+                         class="mx-auto rounded-xl shadow-2xl mt-6"
+                         style="max-width: 900px; max-height: 450px;">
+                    <p class="text-5xl font-black text-gray-900 mt-8">
+                        Terima Kasih!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Slide management
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = 10;
+        
+        function showSlide(n) {
+            if (n >= totalSlides) {
+                currentSlide = 0;
+            } else if (n < 0) {
+                currentSlide = totalSlides - 1;
+            } else {
+                currentSlide = n;
+            }
+            
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                    slide.scrollTop = 0;
+                }
+            });
+            
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+            
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+        
+        // Navigation
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            showSlide(currentSlide - 1);
+        });
+        
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            showSlide(currentSlide + 1);
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                showSlide(currentSlide - 1);
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                showSlide(currentSlide + 1);
+            } else if (e.key === 'Home') {
+                showSlide(0);
+            } else if (e.key === 'End') {
+                showSlide(totalSlides - 1);
+            }
+        });
+        
+        // Fullscreen
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        let isFullscreen = false;
+        
+        function toggleFullscreen() {
+            if (!isFullscreen) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                }
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i> <span>Exit</span>';
+                isFullscreen = true;
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> <span>Fullscreen</span>';
+                isFullscreen = false;
+            }
+        }
+        
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        
+        document.addEventListener('fullscreenchange', () => {
+            isFullscreen = !!document.fullscreenElement;
+            if (!isFullscreen) {
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> <span>Fullscreen</span>';
+            }
+        });
+        
+        // Initialize
+        showSlide(0);
+    </script>
+
+</body>
+</html>
